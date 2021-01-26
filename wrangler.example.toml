@@ -1,0 +1,8 @@
+account_id = "ACCT_ID"
+kv_namespaces = [{binding = "KV", id = "KV_ID"}]
+name = "temp-url"
+route = ""
+type = "webpack"
+webpack_config = "webpack.config.js"
+workers_dev = true
+zone_id = "ZONE_ID"

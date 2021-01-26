@@ -1,0 +1,36 @@
+{
+  "name": "temp-url",
+  "version": "1.0.0",
+  "description": "Simple temperory short url service on Cloudflare Workers.",
+  "scripts": {
+    "build": "webpack",
+    "dev": "NODE_ENV=development npm run build",
+    "format": "prettier --write '**/*.{ts,js,css,json,md}'",
+    "transpile": "tsc --project ./test"
+  },
+  "author": "author",
+  "license": "MIT OR Apache-2.0",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^2.0.0",
+    "prettier": "^2.0.5",
+    "rimraf": "^3.0.2",
+    "service-worker-mock": "^2.0.5",
+    "ts-loader": "^7.0.5",
+    "typescript": "^3.9.5",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.12"
+  },
+  "dependencies": {
+    "nanoid": "^3.1.20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/outloudvi/temp-url.git"
+  },
+  "author": "Outvi V <oss@outv.im>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/outloudvi/temp-url/issues"
+  },
+  "homepage": "https://github.com/outloudvi/temp-url#readme"
+}
