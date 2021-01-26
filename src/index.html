@@ -5,27 +5,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Temperory URL</title>
+    <style>
+        #app {
+            text-align: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+    </style>
 </head>
 
 <body>
     <div id="app">
-        <h1>Temperory URL</h1>
-        <p>TTL: ${TTL}s</p>
-        <input id="url" type="text">
+
+        <h1 class="ui header">Temperory URL</h1>
+        <label>URL:</label>
+        <input id="url" type="text" width="120">
         <button id="btn">OK</button>
-        <p><a id="result" href=""></a></p>
+        <p>
+            <a id="result" href=""></a>
+        <div id="countdown"></div>
+        </p>
+        <p id="error"></p>
     </div>
     <script>
-        document.querySelector('#btn').addEventListener('click', () => {
+        function timing(second) {
+            const min = Math.floor(second / 60)
+            const sec = second % 60
+            return `${min}:${sec < 10 ? '0' : ''}${sec}`
+        }
+        function setupCountdown(elem) {
+            let time = 300
+            let intv = setInterval(() => {
+                time--
+                elem.innerHTML = timing(time)
+                if (time <= 0) {
+                    elem.innerHTML = 'Expired'
+                }
+            }, 1000)
+
+            setTimeout(() => {
+                clearInterval(intv)
+            }, time * 1000);
+        }
+        const btn = document.querySelector('#btn')
+        btn.addEventListener('click', async () => {
             const url = document.querySelector('#url').value
             const ret = document.querySelector('#result')
+            const err = document.querySelector('#error')
             const push = new URL(document.location)
-            push.searchParams.set('target', url)
-            push.searchParams.set('from', document.location)
-            fetch(String(push), { method: "POST" }).then(x => x.text()).then(x => {
-                ret.href = x
-                ret.innerHTML = x
+            btn.setAttribute('disabled', '')
+            btn.value = 'Pending...'
+            push.searchParams.set('t', url)
+            const result = await fetch(String(push), { method: "POST" }).then(x => x.text()).then(x => {
+                ret.innerHTML = ret.href = x
+                setupCountdown(document.querySelector('#countdown'))
+            }).catch(e => {
+                console.log(e)
+                err.innerHTML = e
             })
+            btn.value = 'OK'
+            btn.removeAttribute('disabled')
         })
     </script>
 </body>
