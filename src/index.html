@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temperory URL</title>
+</head>
+
+<body>
+    <div id="app">
+        <h1>Temperory URL</h1>
+        <p>TTL: ${TTL}s</p>
+        <input id="url" type="text">
+        <button id="btn">OK</button>
+        <p><a id="result" href=""></a></p>
+    </div>
+    <script>
+        document.querySelector('#btn').addEventListener('click', () => {
+            const url = document.querySelector('#url').value
+            const ret = document.querySelector('#result')
+            const push = new URL(document.location)
+            push.searchParams.set('target', url)
+            push.searchParams.set('from', document.location)
+            fetch(String(push), { method: "POST" }).then(x => x.text()).then(x => {
+                ret.href = x
+                ret.innerHTML = x
+            })
+        })
+    </script>
+</body>
+
+</html>

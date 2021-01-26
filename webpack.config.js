@@ -1,3 +1,4 @@
+const { readFileSync } = require('fs')
 const path = require('path')
 const webpack = require('webpack')
 
@@ -31,4 +32,14 @@ module.exports = {
       },
     ],
   },
+  plugins: [
+    new webpack.DefinePlugin({
+      STATIC: JSON.stringify({
+        'index.html': readFileSync(
+          path.resolve(__dirname, 'src/index.html'),
+          'utf-8',
+        ),
+      }),
+    }),
+  ],
 }

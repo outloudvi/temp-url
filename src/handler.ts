@@ -2,8 +2,6 @@ const TTL = 300
 
 const SITE_URL = 'https://uau.li'
 
-const HTML_MAINPAGE = ''
-
 async function writeUrl(key: string, dest: string, from: string = SITE_URL) {
   const curr = await KV.get(key)
   if (curr !== null) {
@@ -42,7 +40,7 @@ export async function handleRequest(request: Request): Promise<Response> {
   if (url.pathname === '/') {
     // Main page
     if (request.method === 'GET') {
-      return new Response(HTML_MAINPAGE, {
+      return new Response(STATIC['index.html'], {
         headers: {
           'Content-Type': 'text/html',
         },
