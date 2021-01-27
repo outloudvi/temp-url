@@ -49,6 +49,29 @@ function isValidUrl(url: string): boolean {
   return false
 }
 
+function getInfo(tag: string): Response {
+  switch (tag) {
+    case 'info': {
+      return new Response(
+        JSON.stringify({
+          initialLength: INITIAL_LENGTH,
+          ttl: TTL,
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+      )
+    }
+    default: {
+      return new Response('', {
+        status: 204,
+      })
+    }
+  }
+}
+
 export async function handleRequest(request: Request): Promise<Response> {
   const url = new URL(request.url)
   const referer = url.origin
@@ -82,6 +105,10 @@ export async function handleRequest(request: Request): Promise<Response> {
   }
   const key = url.pathname.replace(/\//, '')
   if (request.method === 'GET') {
+    if (key.split('/').length !== 1) {
+      const infoTag = key.split('/').slice(1).join('/')
+      return getInfo(infoTag)
+    }
     const ret = await KV.get(key.toUpperCase())
     if (ret === null) {
       return new Response('not found', {
