@@ -1,6 +1,13 @@
 const TTL = 300
 
 const SITE_URL = 'https://uau.li'
+const INITIAL_LENGTH = 4
+
+import { customAlphabet } from 'nanoid'
+
+import words from 'nanoid-dictionary/nolookalikes-safe'
+
+const nanoid = customAlphabet(words, INITIAL_LENGTH)
 
 async function writeUrl(key: string, dest: string, from: string = SITE_URL) {
   const curr = await KV.get(key)
@@ -15,8 +22,17 @@ async function writeUrl(key: string, dest: string, from: string = SITE_URL) {
   return new Response(String(url))
 }
 
-function giveRandomPath(): string {
-  return String(Math.random()).slice(2, 6)
+async function giveRandomPath(): Promise<string> {
+  let rnd = nanoid()
+  let cnt = INITIAL_LENGTH + 1
+  while (1) {
+    if ((await KV.get(rnd)) === null) break
+    rnd = customAlphabet(words, cnt++)()
+    if (cnt == INITIAL_LENGTH * 2) {
+      cnt = INITIAL_LENGTH + 1
+    }
+  }
+  return rnd.toUpperCase()
 }
 
 function tryParseUrl(url: string): string | null {
@@ -57,7 +73,7 @@ export async function handleRequest(request: Request): Promise<Response> {
           status: 400,
         })
       }
-      return await writeUrl(giveRandomPath(), triedUrl, referer)
+      return await writeUrl(await giveRandomPath(), triedUrl, referer)
     } else {
       return new Response('bad method', {
         status: 405,
@@ -66,7 +82,7 @@ export async function handleRequest(request: Request): Promise<Response> {
   }
   const key = url.pathname.replace(/\//, '')
   if (request.method === 'GET') {
-    const ret = await KV.get(key)
+    const ret = await KV.get(key.toUpperCase())
     if (ret === null) {
       return new Response('not found', {
         status: 404,
