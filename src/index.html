@@ -27,10 +27,12 @@
 <body>
     <div id="app">
         <div class="header">
-            <h1>Temperory URL</h1>
+            <h1>Temperory tiny URL</h1>
             <noscript>
                 <h2>This website requires Javascript. Use API instead.</h2>
             </noscript>
+        </div>
+        <div id="notice" class="content">
         </div>
         <form class="pure-form pure-form-stacked">
             <fieldset>
@@ -39,14 +41,14 @@
             </fieldset>
         </form>
         <p>
-            <a id="result" href=""></a>
+            <a id="result" href="" target="_blank" rel="noopener external nofollow noreferrer"></a>
         <div id="countdown"></div>
         </p>
         <p id="error"></p>
     </div>
     <script>
         let globalTiming
-        const TIME = 300
+        let TIME = 300
         const BTN_COLOR_TIME = 900
         function timing(second) {
             const min = Math.floor(second / 60)
@@ -112,6 +114,16 @@
             btn.value = 'OK'
             btn.removeAttribute('disabled')
         })
+    </script>
+    <script>
+        const notice = document.querySelector('#notice')
+        fetch('/_/info').then(x => x.json()).then((x) => {
+            notice.innerHTML = `<p>Short link valid in ${x.ttl} seconds</p>
+            <p>Upper/lower case doesn't matter</p>
+            <p>Length can be ${x.initialLength} - ${x.initialLength * 2}</p>`
+            TIME = Number(x.ttl)
+        })
+            .catch(() => { })
     </script>
 </body>
 
