@@ -9,7 +9,7 @@ import {
 import type { ShortenItem } from './types'
 
 import staticList from './static'
-import { SITE_URL } from './conf'
+import { SITE_URL, SIZE_LIMIT } from './conf'
 
 export async function handleRequest(request: Request): Promise<Response> {
   const url = new URL(request.url)
@@ -43,6 +43,11 @@ export async function handleRequest(request: Request): Promise<Response> {
             status: 400,
           })
         }
+      }
+      if (target.payload.length > SIZE_LIMIT) {
+        return new Response(`too large, only ${SIZE_LIMIT}B allowed`, {
+          status: 413,
+        })
       }
       return await writeItem(await giveRandomPath(), target, referer)
     } else {
