@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UaU: Temperory URL shortener</title>
+    <title>UaU: Temporary URL/Text shortener</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@2.0.5/build/pure-min.min.css">
     <style>
         #app {
@@ -14,6 +14,10 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
         }
 
+        .input-good {
+            border-color: #198754 !important;
+        }
+
         .button-success {
             background: rgb(28, 184, 65);
         }
@@ -21,22 +25,29 @@
         .button-error {
             background: rgb(202, 60, 60);
         }
+
+        #hr {
+            margin: 10px 0;
+        }
     </style>
 </head>
 
 <body>
     <div id="app">
         <div class="header">
-            <h1>UaU: Temperory URL shortener</h1>
+            <h1>UaU: Temporary URL/Text shortener</h1>
             <noscript>
-                <h2>This website requires Javascript. Use API instead.</h2>
+                <h2>This website requires Javascript. Use API instead if you don't want JS.</h2>
             </noscript>
         </div>
         <div id="notice" class="content">
         </div>
         <form class="pure-form pure-form-stacked">
             <fieldset>
-                <input id="url" class="pure-input-1" type="text" placeholder="Input the URL...">
+                <input id="url" class="pure-input-1" type="url" placeholder="Input the URL...">
+                <div id="hr">or</div>
+                <textarea id="data" class="pure-input-1" cols="30" rows="10"
+                    placeholder="Input some text..."></textarea>
                 <button id="btn" class="pure-button pure-button-primary" disabled>Gimme Gimme!</button>
             </fieldset>
         </form>
@@ -50,6 +61,7 @@
         let globalTiming
         let TIME = 300
         const BTN_COLOR_TIME = 900
+        let selector = ""
         function timing(second) {
             const min = Math.floor(second / 60)
             const sec = second % 60
@@ -73,25 +85,49 @@
                 globalTiming = undefined
             }, (time + 1) * 1000);
         }
-        const txt = document.querySelector('#url')
+        const urlBlk = document.querySelector('#url')
+        const txtBlk = document.querySelector('#data')
         const btn = document.querySelector('#btn')
-        txt.addEventListener('input', (e) => {
-            if (e.target.value.trim() === "") {
-                btn.setAttribute('disabled', '')
-            } else {
+        function checkPageStatus() {
+            if ((urlBlk.value !== "" && (!urlBlk.validity.typeMismatch)) || txtBlk.value !== "") {
                 btn.removeAttribute('disabled')
+                if (urlBlk.value !== "" && (!urlBlk.validity.typeMismatch)) {
+                    urlBlk.classList.add("input-good")
+                    txtBlk.classList.remove("input-good")
+                    selector = "url"
+                } else {
+                    txtBlk.classList.add("input-good")
+                    urlBlk.classList.remove("input-good")
+                    selector = "txt"
+                }
+            } else {
+                urlBlk.classList.remove("input-good")
+                txtBlk.classList.remove("input-good")
+                selector = ""
+                btn.setAttribute('disabled', '')
             }
-        })
+        }
+        urlBlk.addEventListener('input', (e) => { checkPageStatus() })
+        txtBlk.addEventListener('input', (e) => { checkPageStatus() })
         btn.addEventListener('click', async (e) => {
             e.preventDefault()
-            const url = document.querySelector('#url').value
+            if (selector === "") return
+            const post = {
+                type: selector,
+                payload: selector === "url" ? urlBlk.value : txtBlk.value
+            }
             const ret = document.querySelector('#result')
             const err = document.querySelector('#error')
             const push = new URL(document.location)
             btn.setAttribute('disabled', '')
             btn.value = 'Pending...'
-            push.searchParams.set('t', url)
-            const result = await fetch(String(push), { method: "POST" }).then(async x => {
+            const result = await fetch(String(push), {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(post)
+            }).then(async x => {
                 const t = await x.text()
                 if (x.status < 400) {
                     return t
@@ -126,5 +162,5 @@
             .catch(() => { })
     </script>
 </body>
-</html>
 
+</html>

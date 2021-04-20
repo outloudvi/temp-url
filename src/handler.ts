@@ -1,126 +1,99 @@
-const TTL = 300
+import {
+  tryParseUrl,
+  writeItem,
+  giveRandomPath,
+  getInfo,
+  tryParse,
+} from './utils'
 
-const SITE_URL = 'https://uau.li'
-const INITIAL_LENGTH = 4
+import type { ShortenItem } from './types'
 
-import { customAlphabet } from 'nanoid'
-
-import words from 'nanoid-dictionary/nolookalikes-safe'
-
-const nanoid = customAlphabet(words, INITIAL_LENGTH)
-
-async function writeUrl(key: string, dest: string, from: string = SITE_URL) {
-  const curr = await KV.get(key)
-  if (curr !== null) {
-    return new Response('current result not expired', {
-      status: 403,
-    })
-  }
-  await KV.put(key, dest, { expirationTtl: TTL })
-  const url = new URL(from)
-  url.pathname = key
-  return new Response(String(url))
-}
-
-async function giveRandomPath(): Promise<string> {
-  let rnd = nanoid()
-  let cnt = INITIAL_LENGTH + 1
-  while (1) {
-    if ((await KV.get(rnd)) === null) break
-    rnd = customAlphabet(words, cnt++)()
-    if (cnt == INITIAL_LENGTH * 2) {
-      cnt = INITIAL_LENGTH + 1
-    }
-  }
-  return rnd.toUpperCase()
-}
-
-function tryParseUrl(url: string): string | null {
-  if (isValidUrl(url)) return url
-  if (isValidUrl('http://' + url)) return 'http://' + url
-  return null
-}
-
-function isValidUrl(url: string): boolean {
-  try {
-    new URL(url)
-    return true
-  } catch (_) {}
-  return false
-}
-
-function getInfo(tag: string): Response {
-  switch (tag) {
-    case 'info': {
-      return new Response(
-        JSON.stringify({
-          initialLength: INITIAL_LENGTH,
-          ttl: TTL,
-        }),
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      )
-    }
-    default: {
-      return new Response('', {
-        status: 204,
-      })
-    }
-  }
-}
+import staticList from './static'
+import { SITE_URL } from './conf'
 
 export async function handleRequest(request: Request): Promise<Response> {
   const url = new URL(request.url)
-  const referer = url.origin
-  const target = url.searchParams.get('t')
+
+  // Return index page
+  if (url.pathname === '/' && request.method === 'GET') {
+    return new Response(STATIC['index.html'], {
+      headers: {
+        'Content-Type': 'text/html',
+      },
+    })
+  }
+
   if (url.pathname === '/') {
-    // Main page
-    if (request.method === 'GET') {
-      return new Response(STATIC['index.html'], {
-        headers: {
-          'Content-Type': 'text/html',
-        },
-      })
-    } else if (request.method === 'POST') {
-      if (target === null) {
-        return new Response('no target, use t=url to set the target', {
+    // Data write
+    if (request.method === 'POST') {
+      const referer = url.origin
+      const target: ShortenItem = await request.json().catch(() => ({}))
+      if (
+        ((target as any).type !== 'txt' && (target as any).type !== 'url') ||
+        typeof (target as any).payload !== 'string'
+      ) {
+        return new Response('bad data', {
           status: 400,
         })
       }
-      let triedUrl = tryParseUrl(target)
-      if (triedUrl === null) {
-        return new Response(`invalid url: ${target}`, {
-          status: 400,
-        })
+      if (target.type === 'url') {
+        let triedUrl = tryParseUrl(target.payload)
+        if (triedUrl === null) {
+          return new Response(`invalid url: ${target.payload}`, {
+            status: 400,
+          })
+        }
       }
-      return await writeUrl(await giveRandomPath(), triedUrl, referer)
+      return await writeItem(await giveRandomPath(), target, referer)
     } else {
       return new Response('bad method', {
         status: 405,
       })
     }
   }
-  const key = url.pathname.replace(/\//, '')
+
+  // Dat read
+  const key = url.pathname.replace(/\//, '').toUpperCase()
   if (request.method === 'GET') {
     if (key.split('/').length !== 1) {
       const infoTag = key.split('/').slice(1).join('/')
       return getInfo(infoTag)
     }
-    const ret = await KV.get(key.toUpperCase())
+    if (key.startsWith('_')) {
+      // pro key
+      url.host = 'pro.uau.li'
+      url.pathname = url.pathname.replace(/^\/_/, '/')
+      return new Response(String(url), {
+        status: 302,
+        headers: {
+          Location: String(url),
+        },
+      })
+    }
+    if (staticList[key])
+      return new Response(staticList[key], {
+        status: 302,
+        headers: {
+          Location: staticList[key],
+        },
+      })
+    const ret = await KV.get(key)
     if (ret === null) {
       return new Response('not found', {
         status: 404,
       })
     }
-    return new Response(ret, {
-      status: 302,
-      headers: {
-        Location: ret,
-      },
-    })
+    const item: ShortenItem = tryParse(ret)
+    if (item.type === 'url') {
+      return new Response(item.payload, {
+        status: 302,
+        headers: {
+          Location: item.payload,
+        },
+      })
+    } else {
+      return new Response(item.payload)
+    }
   } else {
     return new Response(
       `bad method. POST ${SITE_URL} to create a new redirect`,
