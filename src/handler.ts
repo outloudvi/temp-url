@@ -64,14 +64,22 @@ export async function handleRequest(request: Request): Promise<Response> {
       const infoTag = key.split('/').slice(1).join('/')
       return getInfo(infoTag)
     }
-    if (key.startsWith('_')) {
+    if (key.startsWith('_') || key.startsWith('~')) {
       // pro key
       url.host = 'pro.uau.li'
-      url.pathname = url.pathname.replace(/^\/_/, '/')
-      return new Response(String(url), {
+      url.pathname = '/' + url.pathname.slice(2)
+      const redir = await fetch(String(url), {
+        redirect: 'manual',
+      }).then((x) => x.headers.get('Location'))
+      if (!redir) {
+        return new Response('No Location found', {
+          status: 500,
+        })
+      }
+      return new Response(redir, {
         status: 302,
         headers: {
-          Location: String(url),
+          Location: redir,
         },
       })
     }
